@@ -75,11 +75,11 @@ if __name__ == '__main__':
 
     # Print sample batches that would be returned by the train_data_loader
     dataiter = iter(train_loader)
-    X, y = dataiter.__next__()
+    X, y1, y2 = dataiter.__next__()
     print (len(train_set))
-    print (X[0].size())
-    print (X[1].size())
-    print (y.size())
+    print (X.size())
+    print (y1.size())
+    print (y2.size())
 
     # Train required model using data loaders defined above
     epochs = args.epochs

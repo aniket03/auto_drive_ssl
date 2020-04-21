@@ -87,24 +87,22 @@ class SimCLRModelTrainTest():
         self.main_model.train()
         train_loss, correct, cnt_batches = 0, 0, 0
 
-        for batch_idx, (data_batch, batch_scene_indices) in enumerate(train_data_loader):
+        for batch_idx, (data_batch, batch_scene_indices, batch_sample_indices) in enumerate(train_data_loader):
 
-            print ('Batch idx', batch_idx)
-            if batch_idx > 1:
-                break
+            # print ('Batch idx', batch_idx)
+            # if batch_idx > 1:
+            #     break
 
             # Set device for data_batch and batch_scene_indices
             data_batch = data_batch.to(self.device)
             batch_scene_indices = batch_scene_indices.to(self.device)
+            batch_sample_indices = batch_sample_indices.to(self.device)
 
             # Pass data_batch through the aux_model to get latent 800x800 representation
             i_batch = self.aux_model(data_batch)
 
             # Get transformed version of latent_representation (i_batch)
             i_t_batch = self.get_transformed_batch(i_batch)
-
-            # Find batch sample_indices
-            batch_sample_indices = self.get_sample_indices_for_scenes(batch_scene_indices)
 
             # Forward pass through the main network
             optimizer.zero_grad()
@@ -178,20 +176,18 @@ class SimCLRModelTrainTest():
         self.main_model.eval()
         test_loss, correct, cnt_batches = 0, 0, 0
 
-        for batch_idx, (data_batch, batch_scene_indices) in enumerate(test_data_loader):
+        for batch_idx, (data_batch, batch_scene_indices, batch_sample_indices) in enumerate(test_data_loader):
 
             # Set device for data_batch and batch_scene_indices
             data_batch = data_batch.to(self.device)
             batch_scene_indices = batch_scene_indices.to(self.device)
+            batch_sample_indices = batch_sample_indices.to(self.device)
 
             # Pass data_batch through the aux_model to get latent 800x800 representation
             i_batch = self.aux_model(data_batch)
 
             # Get transformed version of latent_representation (i_batch)
             i_t_batch = self.get_transformed_batch(i_batch)
-
-            # Find batch sample_indices
-            batch_sample_indices = self.get_sample_indices_for_scenes(batch_scene_indices)
 
             # Forward pass through the main network
             vi_batch, vi_t_batch = self.main_model(i_batch, i_t_batch)

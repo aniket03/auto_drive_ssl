@@ -6,7 +6,6 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from common_constants import NUM_SAMPLE_PER_SCENE, NUM_IMAGE_PER_SAMPLE, IMAGE_NAMES
-from dataset_helpers import get_nine_crops, pirl_full_img_transform, pirl_stl10_jigsaw_patch_transform
 
 
 # The dataset class for unlabeled data.
@@ -55,7 +54,7 @@ class UnlabeledDataset(Dataset):
                 images.append(self.transform(image))
             image_tensor = torch.stack(images)
 
-            return image_tensor, scene_id
+            return image_tensor, scene_id, index
 
         elif self.first_dim == 'image':
             scene_id = self.scene_index[index // (NUM_SAMPLE_PER_SCENE * NUM_IMAGE_PER_SAMPLE)]

@@ -28,11 +28,11 @@ class CombineAndUpSample(nn.Module):
         b_patch = patch_batches[4]
         br_patch = patch_batches[5]
 
-        f_block = torch.cat((fl_patch, f_patch, fr_patch), 2)
-        b_block = torch.cat((br_patch, b_patch, bl_patch), 2)
+        f_block = torch.cat((fl_patch, f_patch, fr_patch), 3)
+        b_block = torch.cat((br_patch, b_patch, bl_patch), 3)
         b_block = torch.flip(b_block, [2,3])
 
-        c_block = torch.cat((f_block, b_block))
+        c_block = torch.cat((f_block, b_block), 2)
 
         x = F.interpolate(c_block, size=[800,800])
 
