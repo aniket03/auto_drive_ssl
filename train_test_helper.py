@@ -100,6 +100,7 @@ class SimCLRModelTrainTest():
 
             # Pass data_batch through the aux_model to get latent 800x800 representation
             i_batch = self.aux_model(data_batch)
+            del data_batch
 
             # Get transformed version of latent_representation (i_batch)
             i_t_batch = self.get_transformed_batch(i_batch)
@@ -107,6 +108,7 @@ class SimCLRModelTrainTest():
             # Forward pass through the main network
             optimizer.zero_grad()
             vi_batch, vi_t_batch = self.main_model(i_batch, i_t_batch)
+            del i_batch, i_t_batch
 
             # Prepare memory bank of negatives for current batch
             mn_scene_indices_all = np.array(list(set(self.train_scene_indices) - set(batch_scene_indices)))
@@ -123,6 +125,7 @@ class SimCLRModelTrainTest():
 
             # Get prob for I and mem_bank_rep of I to belong to same data distribution
             img_mem_rep_probs_arr = get_img_pair_probs(vi_batch, mem_rep_of_batch_imgs, mn_arr, self.temp_parameter)
+            del mn_arr
 
             # Compute loss => back-prop gradients => Update weights
             loss = loss_pirl(img_pair_probs_arr, img_mem_rep_probs_arr)
@@ -143,8 +146,9 @@ class SimCLRModelTrainTest():
                                                         ((1 - self.beta) * vi_batch)
             self.all_samples_mem = all_samples_mem_new.clone().detach()
 
-            del i_batch, i_t_batch, vi_batch, vi_t_batch, mn_arr, mem_rep_of_batch_imgs
-            del img_mem_rep_probs_arr, img_pair_probs_arr
+            del batch_scene_indices, batch_sample_indices
+            del vi_batch, vi_t_batch, mem_rep_of_batch_imgs
+            del img_mem_rep_probs_arr, img_pair_probs_arr, all_samples_mem_new
 
         train_loss /= cnt_batches
 
@@ -185,12 +189,14 @@ class SimCLRModelTrainTest():
 
             # Pass data_batch through the aux_model to get latent 800x800 representation
             i_batch = self.aux_model(data_batch)
+            del data_batch
 
             # Get transformed version of latent_representation (i_batch)
             i_t_batch = self.get_transformed_batch(i_batch)
 
             # Forward pass through the main network
             vi_batch, vi_t_batch = self.main_model(i_batch, i_t_batch)
+            del i_batch, i_t_batch
 
             # Prepare memory bank of negatives for current batch
             mn_scene_indices_all = np.array(list(set(self.val_scene_indices) - set(batch_scene_indices)))
@@ -207,6 +213,7 @@ class SimCLRModelTrainTest():
 
             # Get prob for I and mem_bank_rep of I to belong to same data distribution
             img_mem_rep_probs_arr = get_img_pair_probs(vi_batch, mem_rep_of_batch_imgs, mn_arr, self.temp_parameter)
+            del mn_arr
 
             # Compute loss
             loss = loss_pirl(img_pair_probs_arr, img_mem_rep_probs_arr)
@@ -222,9 +229,9 @@ class SimCLRModelTrainTest():
                                                         ((1 - self.beta) * vi_batch)
             self.all_samples_mem = all_samples_mem_new.clone().detach()
 
-
-            del i_batch, i_t_batch, vi_batch, vi_t_batch, mn_arr, mem_rep_of_batch_imgs
-            del img_mem_rep_probs_arr, img_pair_probs_arr
+            del batch_scene_indices, batch_sample_indices
+            del vi_batch, vi_t_batch, mem_rep_of_batch_imgs
+            del img_mem_rep_probs_arr, img_pair_probs_arr, all_samples_mem_new
 
         test_loss /= cnt_batches
         test_acc = correct / no_test_samples
