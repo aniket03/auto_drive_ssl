@@ -8,7 +8,7 @@ import numpy as np
 from torch import optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from common_constants import PAR_WEIGHTS_DIR
+from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
 from dataset_helpers import def_train_transform
 from experiment_logger import log_experiment
 from get_dataset import UnlabeledDataset
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight-decay', type=float, default=5e-4,
                         help='Weight decay constant (default: 5e-4)')
     parser.add_argument('--tmax-for-cos-decay', type=int, default=50)
-    # parser.add_argument('--warm-start', type=bool, default=False)
+    parser.add_argument('--warm-start', type=bool, default=False)
     parser.add_argument('--count-negatives', type=int, default=6400,
                         help='No of samples in memory bank of negatives')
     parser.add_argument('--beta', type=float, default=0.5, help='Exponential running average constant'
@@ -51,6 +51,9 @@ if __name__ == '__main__':
     parser.add_argument('--temp-parameter', type=float, default=0.07, help='Temperature parameter in NCE probability')
     # parser.add_argument('--cont-epoch', type=int, default=1, help='Epoch to start the training from, helpful when using'
     #                                                               'warm start')
+    parser.add_argument('--prev-trained-aux-file', type=str, default='')
+    parser.add_argument('--prev-trained-main-file', type=str, default='')
+    parser.add_argument('--mem-rep-file', type=str, default='')
     parser.add_argument('--experiment-name', type=str, default='e1_pirl_auto_')
     args = parser.parse_args()
 
@@ -97,12 +100,18 @@ if __name__ == '__main__':
     sgd_optimizer = optim.SGD(params, lr=lr, momentum=0.9, weight_decay=weight_decay_const)
     scheduler = CosineAnnealingLR(sgd_optimizer, args.tmax_for_cos_decay, eta_min=1e-4, last_epoch=-1)
 
-    # # Initialize model weights with a previously trained model if using warm start
-    # if args.warm_start and os.path.exists(model_file_path):
-    #     model_to_train.load_state_dict(torch.load(model_file_path, map_location=device))
+    # Initialize model weights with a previously trained model if using warm start
+    if args.warm_start:
+        aux_file_path = os.path.join(PAR_WEIGHTS_DIR, args.prev_trained_aux_file)
+        aux_model.load_state_dict(torch.load(aux_file_path, map_location=device))
+        main_file_path = os.path.join(PAR_WEIGHTS_DIR, args.prev_trained_main_file)
+        main_model.load_state_dict(torch.load(main_file_path, map_location=device))
 
     # Start training
-    all_samples_mem = np.random.randn(len(train_set), 128)
+    if args.mem_rep_file:
+        all_samples_mem = np.load(os.path.join(PAR_ACTIVATIONS_DIR, args.mem_rep_file))
+    else:
+        all_samples_mem = np.random.randn(len(train_set), 128)
     val_indices = []
     model_train_test_obj = SimCLRModelTrainTest(
         aux_model, main_model, device, model_file_path, all_samples_mem, scene_indices, val_indices,
