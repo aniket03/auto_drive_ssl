@@ -307,6 +307,10 @@ class FCNModelTrainTest():
         train_loss /= cnt_batches
         val_loss, val_acc = self.test(epoch, val_data_loader, no_val_samples)
 
+        if epoch % 10 == 0:
+            torch.save(self.aux_model.state_dict(), self.model_file_path + '_aux_fcn_epoch_{}'.format(epoch))
+            torch.save(self.main_model.state_dict(), self.model_file_path + '_main_fcn_epoch_{}'.format(epoch))
+
         if val_loss < self.val_loss - self.threshold:
             self.val_loss = val_loss
             torch.save(self.aux_model.state_dict(), self.model_file_path+'_aux_fcn')
