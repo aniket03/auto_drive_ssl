@@ -30,6 +30,27 @@ def get_count_correct_preds_pretext(img_pair_probs_arr, img_mem_rep_probs_arr):
     return count_correct.item()
 
 
+def get_threat_score(output, target):
+    """
+    Get average threat score between output and target
+    :param output: batch of road maps
+    :param target: batch of target road maps.
+    """
+
+    # Make output to 0-1 form
+    output_1 = output.round()
+
+    # Reshape output and target
+    output_1 = output_1.reshape(-1,)
+    target = target.reshape(-1,)
+
+    tp = (output_1 * target).sum().float()
+    fp = (output_1 * (1-target)).sum().float()
+    fn = ((1-output_1) * target).sum().float()
+
+    return tp/(tp+fp+fn)
+
+
 class SimCLRModelTrainTest():
 
     def __init__(self, aux_model, main_model, device, model_file_path, all_samples_mem, train_scene_indices,
@@ -302,7 +323,8 @@ class FCNModelTrainTest():
         self.aux_model.eval()
         self.main_model.eval()
         test_loss = 0
-        correct = 0
+        test_acc = 0
+        cnt_batches = 0
 
         for batch_idx, (data, target) in enumerate(test_data_loader):
 
@@ -312,16 +334,18 @@ class FCNModelTrainTest():
             pseudo_input = self.aux_model(data)
             output = self.main_model(pseudo_input)
 
-            test_loss += F.binary_cross_entropy(output, target, size_average=False).item()  # sum up batch loss
+            test_loss += F.binary_cross_entropy(output, target).item()  # sum up batch loss
+            test_acc += get_threat_score(output, target).item()
 
             # correct += get_count_correct_preds(output, target)
+            cnt_batches += 1
 
             del data, target, output
 
-        test_loss /= no_test_samples
-        test_acc = correct / no_test_samples
-        print('\nAfter epoch {} - Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
-            epoch, test_loss, correct, no_test_samples, 100. * correct / no_test_samples))
+        test_loss /= cnt_batches
+        test_acc /= cnt_batches
+        print('\nAfter epoch {} - Test set: Average loss: {:.4f}, Accuracy: ({:.2f}%)\n'.format(
+            epoch, test_loss, test_acc))
 
         return  test_loss, test_acc
 
@@ -400,3 +424,9 @@ if __name__ == '__main__':
     img_pair_probs_arr = torch.randn((256,))
     img_mem_rep_probs_arr = torch.randn((256,))
     print (get_count_correct_preds_pretext(img_pair_probs_arr, img_mem_rep_probs_arr))
+
+    output = torch.rand(2, 1, 800, 800)
+    target = torch.rand(2, 1, 800, 800)
+    target = target.round()
+    x = get_threat_score(output, target)
+    print (x)
