@@ -98,7 +98,9 @@ if __name__ == '__main__':
     simclr_model = simclr_resnet(args.model_type, non_linear_head=False)
     simclr_model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.ssl_trained_main_file)
     simclr_model.load_state_dict(torch.load(simclr_model_file_path, map_location=device))
+    simclr_model.to(device)
     weight_copy_success = copy_weights_between_models(simclr_model, main_model)
+    del simclr_model
 
     # Start training
     model_train_test_obj = FCNModelTrainTest(
