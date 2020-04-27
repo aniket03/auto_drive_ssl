@@ -265,13 +265,10 @@ class FCNModelTrainTest():
             data, target = data.to(self.device), target.to(device=self.device, dtype=torch.float)
 
             target = target.reshape(-1, 1, 800, 800)
-            print('target shape', target.shape)
 
             optimizer.zero_grad()
             pseudo_input = self.aux_model(data)
             output = self.main_model(pseudo_input)
-
-            print (output.shape)
 
             loss = F.binary_cross_entropy(output, target)
             loss.backward()
@@ -311,12 +308,9 @@ class FCNModelTrainTest():
 
             data, target = data.to(self.device), target.to(self.device, dtype=torch.float)
             target = target.reshape(-1, 1, 800, 800)
-            print ('target shape', target.shape)
 
             pseudo_input = self.aux_model(data)
             output = self.main_model(pseudo_input)
-
-            print (output.shape)
 
             test_loss += F.binary_cross_entropy(output, target, size_average=False).item()  # sum up batch loss
 
