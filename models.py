@@ -56,7 +56,7 @@ class ClassificationResNet(nn.Module):
         return x
 
 
-def get_base_resnet_module(model_type):
+def get_base_resnet_module(model_type, requires_avg_pool=True):
     """
     Returns the backbone network for required resnet architecture, specified as model_type
     :param model_type: Can be either of {res18, res34, res50}
@@ -68,7 +68,10 @@ def get_base_resnet_module(model_type):
         original_model = resnet34(pretrained=False)
     else:
         original_model = resnet50(pretrained=False)
-    base_resnet_module = nn.Sequential(*list(original_model.children())[:-1])
+    if requires_avg_pool:
+        base_resnet_module = nn.Sequential(*list(original_model.children())[:-1])
+    else:
+        base_resnet_module = nn.Sequential(*list(original_model.children())[:-2])
 
     return base_resnet_module
 
@@ -132,6 +135,57 @@ def simclr_resnet(model_type, non_linear_head=False):
     return SimCLRResnet(base_resnet_module, non_linear_head)
 
 
+class FCNResnet(nn.Module):
+    def __init__(self, resnet_module, n_classes):
+        super(FCNResnet, self).__init__()
+        self.resnet_module = resnet_module
+
+        self.n_class = n_classes
+        self.pretrained_net = resnet_module
+        self.relu = nn.ReLU(inplace=True)
+        self.deconv1 = nn.ConvTranspose2d(512, 512, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn1 = nn.BatchNorm2d(512)
+        self.deconv2 = nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn2 = nn.BatchNorm2d(256)
+        self.deconv3 = nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.deconv4 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn4 = nn.BatchNorm2d(64)
+        self.deconv5 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn5 = nn.BatchNorm2d(32)
+        self.classifier = nn.Conv2d(32, n_classes, kernel_size=1)
+
+
+    def forward(self, x):
+        """
+        :param x: Batch of images (or pseudo-images - output of aux model)
+        """
+
+        output = self.resnet_module(x)                    # size=(N, 512, x.H/32, x.W/32)
+
+        score = self.bn1(self.relu(self.deconv1(output))) # size=(N, 512, x.H/16, x.W/16)
+        score = self.bn2(self.relu(self.deconv2(score)))  # size=(N, 256, x.H/8, x.W/8)
+        score = self.bn3(self.relu(self.deconv3(score)))  # size=(N, 128, x.H/4, x.W/4)
+        score = self.bn4(self.relu(self.deconv4(score)))  # size=(N, 64, x.H/2, x.W/2)
+        score = self.bn5(self.relu(self.deconv5(score)))  # size=(N, 32, x.H, x.W)
+        score = self.classifier(score)                    # size=(N, n_class, x.H/1, x.W/1)
+
+        return nn.functional.sigmoid(score)
+
+
+def fcn_resnet(model_type, n_classes):
+    """
+    Returns a FCN-32s network with backbone belonging to the family of ResNets
+    :param model_type: Specifies which resnet network to employ. Can be one of {res18, res34, res50}
+    :param n_classes: no of classes in the data
+    """
+
+    base_resnet_module = get_base_resnet_module(model_type, requires_avg_pool=False)
+
+    return FCNResnet(base_resnet_module, n_classes)
+
+
+
 if __name__ == '__main__':
 
     # Test Combine and up sample
@@ -139,6 +193,7 @@ if __name__ == '__main__':
     patches_batch = torch.randn(32, 6, 3, 64, 64)
     result = cm.forward(patches_batch)
     print (result.shape)
+    del cm, patches_batch, result
 
     # Test SimCLR model
     sr = simclr_resnet('res18', non_linear_head=False)  # non_linear_head can be True or False either.
@@ -149,3 +204,10 @@ if __name__ == '__main__':
 
     print (result1.size())
     print (result2.size())
+    del sr, image_batch, tr_img_batch, result1, result2
+
+    # Test fcn_resnet with res34
+    fr = fcn_resnet('res34', 2)
+    image_batch = torch.randn(4, 3, 800, 800)
+    result = fr.forward(image_batch)
+    print (result.size())

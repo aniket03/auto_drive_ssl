@@ -241,6 +241,98 @@ class SimCLRModelTrainTest():
         return  test_loss, test_acc
 
 
+class FCNModelTrainTest():
+
+    def __init__(self, aux_model, main_model, device, model_file_path, threshold=1e-4):
+        super(FCNModelTrainTest, self).__init__()
+        self.aux_model = aux_model
+        self.main_model = main_model
+        self.device = device
+        self.model_file_path = model_file_path
+        self.threshold = threshold
+        self.train_loss = 1e9
+        self.val_loss = 1e9
+
+    def train(self, optimizer, epoch, params_max_norm, train_data_loader, val_data_loader,
+              no_train_samples, no_val_samples):
+        self.aux_model.train()
+        self.main_model.train()
+        train_loss, cnt_batches = 0, 0
+        correct = 0
+
+        for batch_idx, (data, target) in enumerate(train_data_loader):
+
+            data, target = data.to(self.device), target.to(device=self.device, dtype=torch.float)
+
+            target = target.reshape(-1, 1, 800, 800)
+            print('target shape', target.shape)
+
+            optimizer.zero_grad()
+            pseudo_input = self.aux_model(data)
+            output = self.main_model(pseudo_input)
+
+            print (output.shape)
+
+            loss = F.binary_cross_entropy(output, target)
+            loss.backward()
+
+            clip_grad_norm_(self.aux_model.parameters(), params_max_norm)
+            clip_grad_norm_(self.main_model.parameters(), params_max_norm)
+            optimizer.step()
+
+            # correct += get_count_correct_preds(output, target)
+            train_loss += loss.item()
+            cnt_batches += 1
+
+            del data, target, output
+
+        train_loss /= cnt_batches
+        val_loss, val_acc = self.test(epoch, val_data_loader, no_val_samples)
+
+        if val_loss < self.val_loss - self.threshold:
+            self.val_loss = val_loss
+            torch.save(self.aux_model.state_dict(), self.model_file_path+'_aux_fcn')
+            torch.save(self.main_model.state_dict(), self.model_file_path+'_main_fcn')
+
+        train_acc = correct / no_train_samples
+
+        print('\nAfter epoch {} - Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
+            epoch, train_loss, correct, no_train_samples, 100. * correct / no_train_samples))
+
+        return train_loss, train_acc, val_loss, val_acc
+
+    def test(self, epoch, test_data_loader, no_test_samples):
+        self.aux_model.eval()
+        self.main_model.eval()
+        test_loss = 0
+        correct = 0
+
+        for batch_idx, (data, target) in enumerate(test_data_loader):
+
+            data, target = data.to(self.device), target.to(self.device, dtype=torch.float)
+            target = target.reshape(-1, 1, 800, 800)
+            print ('target shape', target.shape)
+
+            pseudo_input = self.aux_model(data)
+            output = self.main_model(pseudo_input)
+
+            print (output.shape)
+
+            test_loss += F.binary_cross_entropy(output, target, size_average=False).item()  # sum up batch loss
+
+            # correct += get_count_correct_preds(output, target)
+
+            del data, target, output
+
+        test_loss /= no_test_samples
+        test_acc = correct / no_test_samples
+        print('\nAfter epoch {} - Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
+            epoch, test_loss, correct, no_test_samples, 100. * correct / no_test_samples))
+
+        return  test_loss, test_acc
+
+
+
 class ModelTrainTest():
 
     def __init__(self, network, device, model_file_path, threshold=1e-4):
