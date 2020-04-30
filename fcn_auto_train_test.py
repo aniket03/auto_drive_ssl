@@ -45,9 +45,6 @@ if __name__ == '__main__':
     # Identify device for holding tensors and carrying out computations
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # Define the file_path where trained model will be saved
-    model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.experiment_name)
-
     # Define train_set, val_set objects
     base_images_dir = '../data'
     annotation_file = os.path.join(base_images_dir, 'annotation.csv')
@@ -136,6 +133,10 @@ if __name__ == '__main__':
         # for name, param in main_model.named_parameters():
         #     print (name, param.requires_grad)
 
+        # Define the file_path where trained model will be saved
+        model_file_path = os.path.join(PAR_WEIGHTS_DIR,
+                                       args.experiment_name + '_ub_level_{}'.format(unblock_level))
+
         # Start training
         model_train_test_obj = FCNModelTrainTest(
             aux_model, main_model, device, model_file_path
@@ -169,5 +170,6 @@ if __name__ == '__main__':
                     break
 
         # Log train-test results
+        n_epochs_ran = len(train_losses)
         log_experiment(args.experiment_name + '_ub_level_{}'.format(unblock_level),
-                       args.epochs, train_losses, val_losses, train_accs, val_accs)
+                       n_epochs_ran, train_losses, val_losses, train_accs, val_accs)
