@@ -6,6 +6,13 @@ def_train_transform = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
+brightness_jitter_transform = transforms.Compose([
+    transforms.ColorJitter(brightness=[0.5, 1.5]),
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
 hflip_data_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(p=1.0),
     transforms.ToTensor(),

@@ -9,7 +9,7 @@ from torch import optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
-from dataset_helpers import def_train_transform
+from dataset_helpers import def_train_transform, brightness_jitter_transform
 from experiment_logger import log_experiment
 from get_dataset import LabeledDataset
 from models import CombineAndUpSample, fcn_resnet, simclr_resnet
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     train_scene_indices = scene_indices[:19]
     val_scene_indices = scene_indices[19:]
     train_set = LabeledDataset(base_images_dir, annotation_file, train_scene_indices,
-                               transform=def_train_transform)
+                               transform=brightness_jitter_transform)
     val_set = LabeledDataset(base_images_dir, annotation_file, val_scene_indices,
                              transform=def_train_transform)
 

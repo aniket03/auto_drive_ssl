@@ -274,6 +274,23 @@ class FCNModelTrainTest():
         self.train_loss = 1e9
         self.val_loss = 1e9
 
+    def get_transformed_batch(self, data, target):
+
+        flip_var = torch.argmax(torch.rand(3))
+        if flip_var == 0:
+            # Do nothing
+            pass
+        elif flip_var == 1:
+            # Horizontal flip input, thus vertical flip target
+            data = torch.flip(data, [3])
+            target = torch.flip(target, [2])
+        else:
+            # Vertical flip input, thus horizontal flip target
+            data = torch.flip(data, [2])
+            target = torch.flip(target, [3])
+
+        return data, target
+
     def train(self, optimizer, epoch, params_max_norm, train_data_loader, val_data_loader,
               no_train_samples, no_val_samples):
         self.aux_model.train()
@@ -289,7 +306,10 @@ class FCNModelTrainTest():
 
             optimizer.zero_grad()
             pseudo_input = self.aux_model(data)
-            output = self.main_model(pseudo_input)
+
+            tr_pseudo_input, target  = self.get_transformed_batch(pseudo_input, target)
+
+            output = self.main_model(tr_pseudo_input)
 
             loss = F.binary_cross_entropy(output, target)
             loss.backward()
