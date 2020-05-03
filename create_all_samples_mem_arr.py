@@ -13,13 +13,15 @@ def get_all_samples_mem_arr(device, sample_data_loader, aux_model, main_model,
     main_model.eval()
 
     all_samples_mem = None
-    for batch_idx, (data_batch, batch_scene_indices, batch_sample_indices) in enumerate(sample_data_loader):
-        # Set device for data_batch and batch_scene_indices
-        data_batch = data_batch.to(device)
-        batch_scene_indices = batch_scene_indices.to(device)
-        batch_sample_indices = batch_sample_indices.to(device)
 
-        with torch.no_grad():
+    with torch.no_grad():
+
+        for batch_idx, (data_batch, batch_scene_indices, batch_sample_indices) in enumerate(sample_data_loader):
+            # Set device for data_batch and batch_scene_indices
+            data_batch = data_batch.to(device)
+            batch_scene_indices = batch_scene_indices.to(device)
+            batch_sample_indices = batch_sample_indices.to(device)
+
             # Pass data_batch through the aux_model to get latent 800x800 representation
             i_batch = aux_model(data_batch)
             del data_batch
