@@ -12,7 +12,7 @@ from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
 from dataset_helpers import def_train_transform, brightness_jitter_transform
 from experiment_logger import log_experiment
 from get_dataset import LabeledDataset
-from models import CombineAndUpSample, fcn_resnet, simclr_resnet
+from models import CombineAndUpSample, fcn_resnet, simclr_resnet, fcn_resnet8s
 from network_helpers import copy_weights_between_models, test_copy_weights
 from random_seed_setter import set_random_generators_seed
 from train_test_helper import FCNModelTrainTest
@@ -21,6 +21,8 @@ if __name__ == '__main__':
 
     # Training arguments
     parser = argparse.ArgumentParser(description='Self driving train test script for Semantic segmentation task')
+    parser.add_argument('--fcn-type', type=str, default='fcn32s', help='The type of fcn network to use '
+                                                                       'fcn32s or fcn8s')
     parser.add_argument('--model-type', type=str, default='res34', help='The network architecture '
                                                                         'to employ as backbone')
     parser.add_argument('--batch-size', type=int, default=16, metavar='N',
@@ -76,7 +78,10 @@ if __name__ == '__main__':
 
     # Define model(s) to train
     aux_model = CombineAndUpSample(n_feature=64)
-    main_model = fcn_resnet(args.model_type, 1)
+    if args.fcn_type == 'fcn32s':
+        main_model = fcn_resnet(args.model_type, 1)
+    else:  #  fcn type = fcn8s
+        main_model = fcn_resnet8s(args.model_type, 1)
 
     # Set device on which training is done.
     aux_model.to(device)

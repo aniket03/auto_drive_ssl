@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet18, resnet34, resnet50
 
+from tweaked_resnet import tweaked_resnet18, tweaked_resnet50, tweaked_resnet34
+
 
 class CombineAndUpSample(nn.Module):
     def __init__(self, n_feature):
@@ -74,6 +76,24 @@ def get_base_resnet_module(model_type, requires_avg_pool=True):
         base_resnet_module = nn.Sequential(*list(original_model.children())[:-2])
 
     return base_resnet_module
+
+
+def get_tweaked_resnet_module(model_type):
+    """
+    Returns a tweaked resnet model, where forward function returns dict of feature maps from
+    each residual block.
+    :param model_type: Can be either of {res18, res34, res50}
+    """
+
+    if model_type == 'res18':
+        base_resnet_module = tweaked_resnet18(pretrained=False)
+    elif model_type == 'res34':
+        base_resnet_module = tweaked_resnet34(pretrained=False)
+    else:
+        base_resnet_module = tweaked_resnet50(pretrained=False)
+
+    return base_resnet_module
+
 
 
 def classifier_resnet(model_type, num_classes):
@@ -185,6 +205,66 @@ def fcn_resnet(model_type, n_classes):
     return FCNResnet(base_resnet_module, n_classes)
 
 
+class FCNResnet8s(nn.Module):
+    def __init__(self, resnet_module, n_classes):
+        super(FCNResnet8s, self).__init__()
+        self.resnet_module = resnet_module
+
+        self.n_class = n_classes
+        self.pretrained_net = resnet_module
+        self.relu = nn.ReLU(inplace=True)
+        self.deconv1 = nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn1 = nn.BatchNorm2d(256)
+        self.deconv2 = nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.deconv3 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.deconv4 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn4 = nn.BatchNorm2d(32)
+        self.deconv5 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.bn5 = nn.BatchNorm2d(16)
+        self.classifier = nn.Conv2d(16, n_classes, kernel_size=1)
+
+
+    def forward(self, x):
+        """
+        :param x: Batch of images (or pseudo-images - output of aux model)
+        """
+
+        x4 = self.resnet_module(x)['res_layer4']          # size=(N, 512, x.H/32, x.W/32)
+        x3 = self.resnet_module(x)['res_layer3']          # size=(N, 256, x.H/32, x.W/32)
+        x2 = self.resnet_module(x)['res_layer2']          # size=(N, 128, x.H/32, x.W/32)
+        x1 = self.resnet_module(x)['res_layer1']          # size=(N, 64, x.H/32, x.W/32)
+
+        score = self.relu(self.deconv1(x4))               # size=(N, 256, x.H/16, x.W/16)
+        score = self.bn1(x3 + score)
+
+        score = self.relu(self.deconv2(score))            # size=(N, 128, x.H/8, x.W/8)
+        score = self.bn2(x2 + score)
+
+        score = self.relu(self.deconv3(score))            # size=(N, 64, x.H/4, x.W/4)
+        score = self.bn3(x1 + score)
+
+        score = self.bn4(self.relu(self.deconv4(score)))  # size=(N, 32, x.H/2, x.W/2)
+        score = self.bn5(self.relu(self.deconv5(score)))  # size=(N, 16, x.H, x.W)
+
+        score = self.classifier(score)                    # size=(N, n_class, x.H/1, x.W/1)
+
+        return nn.functional.sigmoid(score)
+
+
+def fcn_resnet8s(model_type, n_classes):
+    """
+    Returns a FCN-32s network with backbone belonging to the family of ResNets
+    :param model_type: Specifies which resnet network to employ. Can be one of {res18, res34, res50}
+    :param n_classes: no of classes in the data
+    """
+
+    base_resnet_module = get_tweaked_resnet_module(model_type)
+
+    return FCNResnet8s(base_resnet_module, n_classes)
+
+
 
 if __name__ == '__main__':
 
@@ -207,7 +287,13 @@ if __name__ == '__main__':
     del sr, image_batch, tr_img_batch, result1, result2
 
     # Test fcn_resnet with res34
-    fr = fcn_resnet('res34', 2)
+    fr = fcn_resnet('res34', 1)
+    image_batch = torch.randn(4, 3, 800, 800)
+    result = fr.forward(image_batch)
+    print (result.size())
+
+    # Test fcn_resnet8s with res34
+    fr = fcn_resnet8s('res34', 1)
     image_batch = torch.randn(4, 3, 800, 800)
     result = fr.forward(image_batch)
     print (result.size())
