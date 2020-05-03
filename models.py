@@ -231,10 +231,14 @@ class FCNResnet8s(nn.Module):
         :param x: Batch of images (or pseudo-images - output of aux model)
         """
 
-        x4 = self.resnet_module(x)['res_layer4']          # size=(N, 512, x.H/32, x.W/32)
-        x3 = self.resnet_module(x)['res_layer3']          # size=(N, 256, x.H/32, x.W/32)
-        x2 = self.resnet_module(x)['res_layer2']          # size=(N, 128, x.H/32, x.W/32)
-        x1 = self.resnet_module(x)['res_layer1']          # size=(N, 64, x.H/32, x.W/32)
+        layer_activations_dict = self.resnet_module(x)
+
+        x4 = layer_activations_dict['res_layer4']    # size=(N, 512, x.H/32, x.W/32)
+        x3 = layer_activations_dict['res_layer3']    # size=(N, 256, x.H/32, x.W/32)
+        x2 = layer_activations_dict['res_layer2']    # size=(N, 128, x.H/32, x.W/32)
+        x1 = layer_activations_dict['res_layer1']    # size=(N, 64, x.H/32, x.W/32)
+
+        del layer_activations_dict
 
         score = self.relu(self.deconv1(x4))               # size=(N, 256, x.H/16, x.W/16)
         score = self.bn1(x3 + score)
