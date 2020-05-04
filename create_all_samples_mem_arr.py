@@ -66,7 +66,7 @@ if __name__ == '__main__':
     scene_indices = np.arange(0, 111)
     sample_data_set = UnlabeledDataset(base_images_dir, scene_indices, first_dim='sample',
                                        transform=def_train_transform)
-    sample_data_loader = torch.utils.data.DataLoader(sample_data_set, batch_size=scene_indices.size,
+    sample_data_loader = torch.utils.data.DataLoader(sample_data_set, batch_size=37,
                                                      num_workers=32)
     # Get the memory bank representation required
     get_all_samples_mem_arr(device, sample_data_loader, aux_model, main_model,
