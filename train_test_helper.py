@@ -307,7 +307,8 @@ class FCNModelTrainTest():
             optimizer.zero_grad()
             pseudo_input = self.aux_model(data)
 
-            tr_pseudo_input, target  = self.get_transformed_batch(pseudo_input, target)
+            # tr_pseudo_input, target  = self.get_transformed_batch(pseudo_input, target)
+            tr_pseudo_input = pseudo_input
 
             output = self.main_model(tr_pseudo_input)
 
