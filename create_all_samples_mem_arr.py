@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Define model file_paths
     aux_model_file = PAR_WEIGHTS_DIR + '/e1_simclr_auto_aux_epoch_90'
     main_model_file = PAR_WEIGHTS_DIR + '/e1_simclr_auto_main_epoch_90'
-    all_samples_mem_file = PAR_ACTIVATIONS_DIR + '/e1_simclr_auto_activ_epoch_90.npy'
+    all_samples_mem_file = PAR_ACTIVATIONS_DIR + '/e1_simclr_auto_activ_val_epoch_90.npy'
 
     # Get the initial random weight models
     aux_model = CombineAndUpSample(n_feature=64)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # Get data loader
     base_images_dir = '../data'
-    scene_indices = np.arange(0, 111)
+    scene_indices = np.arange(111, 134)
     sample_data_set = UnlabeledDataset(base_images_dir, scene_indices, first_dim='sample',
                                        transform=def_train_transform)
     sample_data_loader = torch.utils.data.DataLoader(sample_data_set, batch_size=37,
