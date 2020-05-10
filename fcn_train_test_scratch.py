@@ -81,7 +81,7 @@ if __name__ == '__main__':
     if args.fcn_type == 'fcn32s':
         main_model = fcn_resnet(args.model_type, 1)
     else:  #  fcn type = fcn8s
-        main_model = fcn_resnet8s(args.model_type, 1)
+        main_model = fcn_resnet8s(args.model_type, 1, pretrained=True)
 
     # Set device on which training is done.
     aux_model.to(device)

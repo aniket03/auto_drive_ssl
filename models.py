@@ -78,7 +78,7 @@ def get_base_resnet_module(model_type, requires_avg_pool=True):
     return base_resnet_module
 
 
-def get_tweaked_resnet_module(model_type):
+def get_tweaked_resnet_module(model_type, pretrained):
     """
     Returns a tweaked resnet model, where forward function returns dict of feature maps from
     each residual block.
@@ -86,11 +86,11 @@ def get_tweaked_resnet_module(model_type):
     """
 
     if model_type == 'res18':
-        base_resnet_module = tweaked_resnet18(pretrained=False)
+        base_resnet_module = tweaked_resnet18(pretrained=pretrained)
     elif model_type == 'res34':
-        base_resnet_module = tweaked_resnet34(pretrained=False)
+        base_resnet_module = tweaked_resnet34(pretrained=pretrained)
     else:
-        base_resnet_module = tweaked_resnet50(pretrained=False)
+        base_resnet_module = tweaked_resnet50(pretrained=pretrained)
 
     return base_resnet_module
 
@@ -257,14 +257,14 @@ class FCNResnet8s(nn.Module):
         return nn.functional.sigmoid(score)
 
 
-def fcn_resnet8s(model_type, n_classes):
+def fcn_resnet8s(model_type, n_classes, pretrained=False):
     """
     Returns a FCN-32s network with backbone belonging to the family of ResNets
     :param model_type: Specifies which resnet network to employ. Can be one of {res18, res34, res50}
     :param n_classes: no of classes in the data
     """
 
-    base_resnet_module = get_tweaked_resnet_module(model_type)
+    base_resnet_module = get_tweaked_resnet_module(model_type, pretrained=pretrained)
 
     return FCNResnet8s(base_resnet_module, n_classes)
 
