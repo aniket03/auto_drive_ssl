@@ -3,23 +3,30 @@ import torch
 from models import classifier_resnet, simclr_resnet
 
 
-def test_copy_weights(m1, m2):
+def test_copy_weights_resnet_module(m1, m2):
     """
     Tests that weights copied from m1 into m2, are actually refected in m2
     """
     m1_state_dict = m1.state_dict()
     m2_state_dict = m2.state_dict()
     weight_copy_flag = 1
+
+    # Get m1 and m2 layer names
+    m1_layer_names, m2_layer_names = [], []
     for name, param in m1_state_dict.items():
-        if name in m2_state_dict:
-            if not torch.all(torch.eq(param.data, m2_state_dict[name].data)):
-                print("Something is incorrect for layer {} in 2nd model", name)
+        m1_layer_names.append(name)
+    for name, param in m2_state_dict.items():
+        m2_layer_names.append(name)
+
+    # Check if copy was succesful
+    for ind in range(len(m1_layer_names)):
+        if m1_layer_names[ind][:6] == 'resnet':
+            if torch.all(torch.eq(m1_state_dict[m1_layer_names[ind]].data, m2_state_dict[m2_layer_names[ind]].data)):
                 weight_copy_flag = 0
+                print ('Something is incorrect for layer {} and {}'.format(m1_layer_names[ind], m2_layer_names[ind]))
 
-    if weight_copy_flag:
-        print('All is well')
-
-    return 1
+    if weight_copy_flag == 1:
+        print ('All is well')
 
 
 def copy_weights_between_models(m1, m2):
@@ -32,17 +39,20 @@ def copy_weights_between_models(m1, m2):
     m1_state_dict = m1.state_dict()
     m2_state_dict = m2.state_dict()
 
-    # Set the m2 model's weights with trained m1 model weights
+    # Get m1 and m2 layer names
+    m1_layer_names, m2_layer_names = [], []
     for name, param in m1_state_dict.items():
-        if name not in m2_state_dict:
-            continue
-        else:
-            m2_state_dict[name] = param.data
-    m2.load_state_dict(m2_state_dict)
+        m1_layer_names.append(name)
+    for name, param in m2_state_dict.items():
+        m2_layer_names.append(name)
 
-    # Test that model m2 **really** has got updated weights
-    return test_copy_weights(m1, m2)
+    cnt = 0
+    for ind in range(len(m1_layer_names)):
+        if m1_layer_names[ind][:6] == 'resnet':
+            cnt += 1
+            m2_state_dict[m2_layer_names[ind]] = m1_state_dict[m1_layer_names[ind]].data
 
+    print ('Count of layers whose weights were copied between two models', cnt)
 
 if __name__ == '__main__':
 

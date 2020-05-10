@@ -13,7 +13,7 @@ from dataset_helpers import def_train_transform, brightness_jitter_transform
 from experiment_logger import log_experiment
 from get_dataset import LabeledDataset
 from models import CombineAndUpSample, fcn_resnet, simclr_resnet, fcn_resnet8s
-from network_helpers import copy_weights_between_models, test_copy_weights
+from network_helpers import copy_weights_between_models, test_copy_weights_resnet_module
 from random_seed_setter import set_random_generators_seed
 from train_test_helper import FCNModelTrainTest
 
@@ -96,7 +96,8 @@ if __name__ == '__main__':
     simclr_model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.ssl_trained_main_file)
     simclr_model.load_state_dict(torch.load(simclr_model_file_path, map_location=device))
     simclr_model.to(device)
-    weight_copy_success = copy_weights_between_models(simclr_model, main_model)
+    copy_weights_between_models(simclr_model, main_model)
+    test_copy_weights_resnet_module(simclr_model, main_model)
     del simclr_model
 
     # Freeze all layers in the aux model and main model's resnet module
