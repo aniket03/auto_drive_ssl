@@ -7,15 +7,71 @@ import numpy as np
 
 from torch import optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torchvision.models import resnet34
 
-from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
+from common_constants import PAR_WEIGHTS_DIR
 from dataset_helpers import def_train_transform, brightness_jitter_transform
 from experiment_logger import log_experiment
 from get_dataset import LabeledDataset
-from models import CombineAndUpSample, fcn_resnet, simclr_resnet, fcn_resnet8s
-from network_helpers import copy_weights_between_models, test_copy_weights
+from models import CombineAndUpSample, fcn_resnet, fcn_resnet8s
 from random_seed_setter import set_random_generators_seed
 from train_test_helper import FCNModelTrainTest
+
+
+def copy_weights_between_models_local(m1, m2):
+    """
+    Copy weights for layers common between m1 and m2.
+    From m1 => m2
+    """
+
+    # Load state dictionaries for m1 model and m2 model
+    m1_state_dict = m1.state_dict()
+    m2_state_dict = m2.state_dict()
+
+    # Get m1 and m2 layer names
+    m1_layer_names, m2_layer_names = [], []
+    for name, param in m1_state_dict.items():
+        m1_layer_names.append(name)
+    for name, param in m2_state_dict.items():
+        m2_layer_names.append(name)
+
+    cnt = 0
+    for ind in range(len(m1_layer_names)):
+        if ind < 216:
+            cnt += 1
+            m2_state_dict[m2_layer_names[ind]] = m1_state_dict[m1_layer_names[ind]].data
+
+    m2.load_state_dict(m2_state_dict)
+
+    print ('Count of layers whose weights were copied between two models', cnt)
+    return m2
+
+
+def test_copy_weights_resnet_module_local(m1, m2):
+    """
+    Tests that weights copied from m1 into m2, are actually refected in m2
+    """
+    m1_state_dict = m1.state_dict()
+    m2_state_dict = m2.state_dict()
+    weight_copy_flag = 1
+
+    # Get m1 and m2 layer names
+    m1_layer_names, m2_layer_names = [], []
+    for name, param in m1_state_dict.items():
+        m1_layer_names.append(name)
+    for name, param in m2_state_dict.items():
+        m2_layer_names.append(name)
+
+    # Check if copy was succesful
+    for ind in range(len(m1_layer_names)):
+        if ind < 216:
+            if not torch.all(torch.eq(m1_state_dict[m1_layer_names[ind]].data, m2_state_dict[m2_layer_names[ind]].data)):
+                weight_copy_flag = 0
+                print ('Something is incorrect for layer {} and {}'.format(m1_layer_names[ind], m2_layer_names[ind]))
+
+    if weight_copy_flag == 1:
+        print ('All is well')
+
 
 if __name__ == '__main__':
 
@@ -86,6 +142,13 @@ if __name__ == '__main__':
     # Set device on which training is done.
     aux_model.to(device)
     main_model.to(device)
+
+    # Inherit weights for main model from ImageNet pre-trained ResNet34
+    imagenet_resnet = resnet34(pretrained=True)
+    imagenet_resnet.to(device)
+    main_model = copy_weights_between_models_local(imagenet_resnet, main_model)
+    test_copy_weights_resnet_module_local(imagenet_resnet, main_model)
+    del imagenet_resnet
 
     # Define the file_path where trained model will be saved
     model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.experiment_name)
