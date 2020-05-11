@@ -96,7 +96,7 @@ if __name__ == '__main__':
     simclr_model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.ssl_trained_main_file)
     simclr_model.load_state_dict(torch.load(simclr_model_file_path, map_location=device))
     simclr_model.to(device)
-    copy_weights_between_models(simclr_model, main_model)
+    main_model = copy_weights_between_models(simclr_model, main_model)
     test_copy_weights_resnet_module(simclr_model, main_model)
     del simclr_model
 

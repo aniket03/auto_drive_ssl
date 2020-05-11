@@ -21,7 +21,7 @@ def test_copy_weights_resnet_module(m1, m2):
     # Check if copy was succesful
     for ind in range(len(m1_layer_names)):
         if m1_layer_names[ind][:6] == 'resnet':
-            if torch.all(torch.eq(m1_state_dict[m1_layer_names[ind]].data, m2_state_dict[m2_layer_names[ind]].data)):
+            if not torch.all(torch.eq(m1_state_dict[m1_layer_names[ind]].data, m2_state_dict[m2_layer_names[ind]].data)):
                 weight_copy_flag = 0
                 print ('Something is incorrect for layer {} and {}'.format(m1_layer_names[ind], m2_layer_names[ind]))
 
@@ -52,7 +52,10 @@ def copy_weights_between_models(m1, m2):
             cnt += 1
             m2_state_dict[m2_layer_names[ind]] = m1_state_dict[m1_layer_names[ind]].data
 
+    m2.load_state_dict(m2_state_dict)
+
     print ('Count of layers whose weights were copied between two models', cnt)
+    return m2
 
 if __name__ == '__main__':
 
