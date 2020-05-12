@@ -6,7 +6,7 @@ segmentation problem in the domain of autonomous driving.
 
 ## Self supervision task (Pretext Invariant Representation Learning - PIRL)
 We provide the block diagram for PIRL pipeline followed by us below:
-![alt text](PIRL pipeline diagram.jpg "PIRL block diagram")
+![alt text](PIRL-pipeline-diagram.jpg "PIRL block diagram")
 
 To run the PIRL pipeline (from scratch) following command can be executed
 ```
@@ -24,7 +24,7 @@ python pirl_auto_train_test.py --model-type 'res34' --batch-size 16 --epochs 32 
 
 ## FCN-8s (Fully convolutional neural network) Pipeline for road map prediction
 We provide the block diagram for FCN-8s pipeline followed by us below:
-![alt text](FCN8s pipeline.jpg "FCN-8s pipeline block diagram")
+![alt text](FCN8s-pipeline.jpg "FCN-8s pipeline block diagram")
 
 To run the FCN-8s pipeline (with PIRL network weights) following command can be executed
 ```
