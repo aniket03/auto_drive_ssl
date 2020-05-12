@@ -12,7 +12,7 @@ from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
 from dataset_helpers import def_train_transform, brightness_jitter_transform
 from experiment_logger import log_experiment
 from get_dataset import LabeledDataset
-from models import CombineAndUpSample, fcn_resnet, simclr_resnet, fcn_resnet8s
+from models import CombineAndUpSample, fcn_resnet, pirl_resnet, fcn_resnet8s
 from network_helpers import copy_weights_between_models, test_copy_weights_resnet_module
 from random_seed_setter import set_random_generators_seed
 from train_test_helper import FCNModelTrainTest
@@ -92,13 +92,13 @@ if __name__ == '__main__':
     aux_model.load_state_dict(torch.load(aux_file_path, map_location=device))
 
     # Inherit weights for main model from pre-trained SSL main model
-    simclr_model = simclr_resnet(args.model_type, non_linear_head=False)
-    simclr_model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.ssl_trained_main_file)
-    simclr_model.load_state_dict(torch.load(simclr_model_file_path, map_location=device))
-    simclr_model.to(device)
-    main_model = copy_weights_between_models(simclr_model, main_model)
-    test_copy_weights_resnet_module(simclr_model, main_model)
-    del simclr_model
+    pirl_model = pirl_resnet(args.model_type, non_linear_head=False)
+    pirl_model_file_path = os.path.join(PAR_WEIGHTS_DIR, args.ssl_trained_main_file)
+    pirl_model.load_state_dict(torch.load(pirl_model_file_path, map_location=device))
+    pirl_model.to(device)
+    main_model = copy_weights_between_models(pirl_model, main_model)
+    test_copy_weights_resnet_module(pirl_model, main_model)
+    del pirl_model
 
     # Freeze all layers in the aux model and main model's resnet module
     for name, param in aux_model.named_parameters():

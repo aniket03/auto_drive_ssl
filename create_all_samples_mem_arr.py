@@ -4,7 +4,7 @@ import torch
 from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR, NUM_SAMPLE_PER_SCENE
 from dataset_helpers import def_train_transform
 from get_dataset import UnlabeledDataset
-from models import CombineAndUpSample, simclr_resnet
+from models import CombineAndUpSample, pirl_resnet
 
 
 def get_all_samples_mem_arr(device, sample_data_loader, aux_model, main_model,
@@ -49,13 +49,13 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Define model file_paths
-    aux_model_file = PAR_WEIGHTS_DIR + '/e1_simclr_auto_aux_epoch_90'
-    main_model_file = PAR_WEIGHTS_DIR + '/e1_simclr_auto_main_epoch_90'
-    all_samples_mem_file = PAR_ACTIVATIONS_DIR + '/e1_simclr_auto_activ_val_epoch_90.npy'
+    aux_model_file = PAR_WEIGHTS_DIR + '/e1_pirl_auto_aux_epoch_90'
+    main_model_file = PAR_WEIGHTS_DIR + '/e1_pirl_auto_main_epoch_90'
+    all_samples_mem_file = PAR_ACTIVATIONS_DIR + '/e1_pirl_auto_activ_val_epoch_90.npy'
 
     # Get the initial random weight models
     aux_model = CombineAndUpSample(n_feature=64)
-    main_model = simclr_resnet('res34', non_linear_head=False)
+    main_model = pirl_resnet('res34', non_linear_head=False)
 
     # Initialize model weights with a previously trained model
     aux_model.load_state_dict(torch.load(aux_model_file, map_location=device))

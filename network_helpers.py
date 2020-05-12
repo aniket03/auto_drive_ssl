@@ -1,6 +1,6 @@
 import torch
 
-from models import classifier_resnet, simclr_resnet
+from models import classifier_resnet, pirl_resnet
 
 
 def test_copy_weights_resnet_module(m1, m2):
@@ -59,7 +59,7 @@ def copy_weights_between_models(m1, m2):
 
 if __name__ == '__main__':
 
-    pr = simclr_resnet('res18', non_linear_head=False)
+    pr = pirl_resnet('res18', non_linear_head=False)
     cr = classifier_resnet('res18', num_classes=10)
 
     copy_success = copy_weights_between_models(pr, cr)

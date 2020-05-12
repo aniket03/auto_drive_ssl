@@ -51,11 +51,11 @@ def get_threat_score(output, target):
     return tp/(tp+fp+fn)
 
 
-class SimCLRModelTrainTest():
+class PIRLModelTrainTest():
 
     def __init__(self, aux_model, main_model, device, model_file_path, all_samples_mem, train_scene_indices,
                  val_scene_indices, count_negatives, temp_parameter, beta, only_train=False, threshold=1e-4):
-        super(SimCLRModelTrainTest, self).__init__()
+        super(PIRLModelTrainTest, self).__init__()
         self.aux_model = aux_model
         self.main_model = main_model
         self.device = device

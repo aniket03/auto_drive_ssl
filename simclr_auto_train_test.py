@@ -12,9 +12,9 @@ from common_constants import PAR_WEIGHTS_DIR, PAR_ACTIVATIONS_DIR
 from dataset_helpers import def_train_transform
 from experiment_logger import log_experiment
 from get_dataset import UnlabeledDataset
-from models import simclr_resnet, CombineAndUpSample
+from models import pirl_resnet, CombineAndUpSample
 from random_seed_setter import set_random_generators_seed
-from train_test_helper import SimCLRModelTrainTest
+from train_test_helper import PIRLModelTrainTest
 
 
 def unpickle(file):
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     # Define model(s) to train
     aux_model = CombineAndUpSample(n_feature=64)
-    main_model = simclr_resnet(args.model_type, args.non_linear_head)
+    main_model = pirl_resnet(args.model_type, args.non_linear_head)
 
     # Set device on which training is done. Plus optimizer to use.
     aux_model.to(device)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     else:
         all_samples_mem = np.random.randn(len(train_set), 128)
     val_indices = []
-    model_train_test_obj = SimCLRModelTrainTest(
+    model_train_test_obj = PIRLModelTrainTest(
         aux_model, main_model, device, model_file_path, all_samples_mem, scene_indices, val_indices,
         args.count_negatives, args.temp_parameter, args.beta, args.only_train
     )

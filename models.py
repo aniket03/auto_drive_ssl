@@ -108,9 +108,9 @@ def classifier_resnet(model_type, num_classes):
     return ClassificationResNet(base_resnet_module, num_classes)
 
 
-class SimCLRResnet(nn.Module):
+class PIRLResnet(nn.Module):
     def __init__(self, resnet_module, non_linear_head=False):
-        super(SimCLRResnet, self).__init__()
+        super(PIRLResnet, self).__init__()
         self.resnet_module = resnet_module
         self.lin_project_1 = nn.Linear(512, 128)
         if non_linear_head:
@@ -141,7 +141,7 @@ class SimCLRResnet(nn.Module):
         return vi_batch, vi_t_batch
 
 
-def simclr_resnet(model_type, non_linear_head=False):
+def pirl_resnet(model_type, non_linear_head=False):
     """
     Returns a network which supports Pre-text invariant representation learning
     with backbone belonging to the family of ResNets
@@ -152,7 +152,7 @@ def simclr_resnet(model_type, non_linear_head=False):
 
     base_resnet_module = get_base_resnet_module(model_type)
 
-    return SimCLRResnet(base_resnet_module, non_linear_head)
+    return PIRLResnet(base_resnet_module, non_linear_head)
 
 
 class FCNResnet(nn.Module):
@@ -277,8 +277,8 @@ if __name__ == '__main__':
     print (result.shape)
     del cm, patches_batch, result
 
-    # Test SimCLR model
-    sr = simclr_resnet('res18', non_linear_head=False)  # non_linear_head can be True or False either.
+    # Test PIRL model
+    sr = pirl_resnet('res18', non_linear_head=False)  # non_linear_head can be True or False either.
     image_batch = torch.randn(32, 3, 64, 64)
     tr_img_batch = torch.randn(32, 3, 64, 64)
 
