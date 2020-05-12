@@ -33,4 +33,7 @@ python fcn_train_test_scratch.py --fcn-type 'fcn8s' ----model-type 'res34'  --ba
 --experiment-name e1_fcn_auto_drive
 ```
 
+## Note:
+The code for object detection part of our project can be found [here](https://github.com/dhruv7goyal/auto-drive-object-detection).
+
 
